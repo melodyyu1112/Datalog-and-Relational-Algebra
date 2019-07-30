@@ -1,0 +1,121 @@
+/************ data model **************/
+.symbol_type PersonType
+.symbol_type DescriptionType
+
+.decl person(name:PersonType, description:DescriptionType)
+.input person(filename="DATA/person.facts")
+
+.decl female(name:PersonType)
+.input female(filename="DATA/female.facts")
+
+.decl male(name:PersonType)
+.input male(filename="DATA/male.facts")
+
+.decl parent_child(p1:PersonType, p2:PersonType)
+.input parent_child(filename="DATA/parent_child.facts")
+
+.decl person_living(p:PersonType)
+.input person_living(filename="DATA/person_living.facts")
+
+/************* problem 0 **************/
+/**** Find all children of Priscilla ****/
+.decl p0(x:PersonType, d:DescriptionType)
+.output p0(filename="hw4-0.ans")
+
+// NOTE: if you want to redirect the output to console
+// you can use the syntax:
+.output p0(IO=stdout)
+p0(x,d) :- parent_child("Priscilla",x), person(x,d).
+
+// NOTE: DO NOT remove the declarations or the .output statements below.
+// you can ignore any "No rules/facts defined for relation" warnings when you
+// have not defined the rules for those relations
+/************* problem 1 **************/
+.decl p1(x:PersonType,d:DescriptionType)
+
+.output p1(filename="hw4-1.ans")
+.output p1(IO=stdout)
+p1(x,d) :- p0(p,_), parent_child(p,x), person(x,d).
+
+/************* problem 2 **************/
+.decl p2(x:PersonType, d:DescriptionType, m:number)
+.decl f(x: PersonType, d: PersonType)
+.decl f2(x: PersonType, c: number)
+.decl maxcount(c: number)
+.decl maxattr(x:PersonType, maxcount: number)
+
+.output p2(filename="hw4-2.ans")
+.output p2(IO=stdout)
+
+f(x,d) :- female(x), parent_child(x, d).
+f(x,d) :- f(x,a), parent_child(a, d).
+
+f2(x, c) :- f(x,_), c = count : { f(x,_)}.
+maxcount(c):- c = max m : {f2(_, m)}.
+maxattr(x,c) :- f2(x,c), maxcount(c).
+p2(x, d, m) :- maxattr(x, m), person(x, d).
+
+.decl m(x: PersonType, d: PersonType)
+.decl m2(x: PersonType, c: number)
+m(x,d) :- male(x), parent_child(x, d).
+m(x,d) :- m(x,a), parent_child(a, d).
+
+m2(x, c) :- m(x,_), c = count : { m(x,_)}.
+maxcount(c):- c = max m : {m2(_, m)}.
+maxattr(x,c) :- m2(x,c), maxcount(c).
+p2(x, d, m) :- maxattr(x, m), person(x, d).
+
+/************* problem 3 **************/
+.decl p3(x:PersonType, m1:number, m2:number)
+.decl maxgeneration(x: PersonType, c: number)
+.decl mingeneration(x:PersonType, c: number)
+.decl findgen(n: number, x: PersonType)
+
+.output p3(filename="hw4-3.ans")
+.output p3(IO=stdout)
+
+findgen(0, x) :- person(x, _), !parent_child(_, x).
+findgen(n + 1, p1) :- parent_child(x, p1), findgen(n, x).
+
+maxgeneration(x, c):- person_living(x), c = max n : {findgen(n, x)}.
+mingeneration(x, c):- person_living(x), c = min n : {findgen(n, x)}.
+
+p3(x,m1,m2) :- mingeneration(x,m1), maxgeneration(x,m2).
+
+
+/************* problem 4 **************/
+.decl p4(x:PersonType)
+
+
+.output p4(filename="hw4-4.ans")
+.output p4(IO=stdout)
+
+
+.decl matrilineal(p:PersonType, x:PersonType)
+.decl mal(p:PersonType, y:PersonType)
+.decl lc(p:PersonType, c:number)
+.decl livingcount(d:number)
+
+matrilineal(p,x) :- parent_child(p,x), female(p).
+matrilineal(p,x) :- matrilineal(p,y), parent_child(y,x), female(y).
+mal(p,y) :- matrilineal(p,y), person_living(y).
+lc(p,c) :- mal(p,_), c= count: {mal(p,_)}.
+livingcount(d) :- d = count : {person_living(_)}.
+p4(x) :- lc(x,c), livingcount(c).
+
+/************* problem 5 **************/
+.decl p5(x:PersonType)
+.decl minimum_attr(c: number)
+
+.decl maximum_generation(x:PersonType, c: number)
+.decl most_recent(x:PersonType, c: number)
+.decl find_generation(x:PersonType, child: PersonType, n: number)
+.output p5(filename="hw4-5.ans")
+.output p5(IO=stdout)
+
+find_generation(a, child, 0) :- p4(a), parent_child(a, child).
+find_generation(x, childchild, n+1) :- find_generation(x, child, n), parent_child(child, childchild) .
+maximum_generation(x, c):- p4(x), c= max n :{find_generation( x, _, n)}.
+
+minimum_attr(c):- c = min n: {maximum_generation(x, n)}.
+p5(x):- maximum_generation(x, c), minimum_attr(c).
